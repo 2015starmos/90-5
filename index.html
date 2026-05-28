@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水電房租計算機</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Microsoft JhengHei", sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #f4f6f8;
+            padding: 20px;
+        }
+        .wrap {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #ccc;
+            margin-bottom: 20px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .item {
+            margin: 12px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        button {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-blue {
+            background: #2196F3;
+            color: #fff;
+        }
+        .btn-green {
+            background: #4CAF50;
+            color: #fff;
+        }
+        .btn-red {
+            background: #f44336;
+            color: #fff;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4ff;
+            border-radius: 6px;
+            line-height: 1.8;
+        }
+        .total-text {
+            font-weight: bold;
+            color: #d32f2f;
+            font-size: 17px;
+        }
+        .record-list {
+            margin-top: 20px;
+            min-height: 100px;
+        }
+        .record-item {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .del-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: auto;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .hide {
+            display: none !important;
+        }
+        .tip {
+            color: #f44336;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .page-box {
+            margin-top: 15px;
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 14px;
+            margin: 0;
+        }
+        .page-active {
+            background: #2196F3;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="box" id="loginBox">
+        <h2>請輸入密碼進入系統</h2>
+        <div class="item">
+            <label>登入密碼</label>
+            <input type="password" id="mainPwd" placeholder="輸入密碼">
+        </div>
+        <p class="tip" id="mainTip"></p>
+        <button class="btn-blue" onclick="mainLogin()">登入系統</button>
+    </div>
+
+    <div id="mainPage" class="hide">
+        <div class="box">
+            <h2>雙月水電房租計算</h2>
+            <div class="item">
+                <label>上期電錶度數</label>
+                <input type="number" id="lastDegree" placeholder="輸入上期度數">
+            </div>
+            <div class="item">
+                <label>本期電錶度數</label>
+                <input type="number" id="currDegree" placeholder="輸入本期度數">
+            </div>
+            <button class="btn-green" onclick="calcFee()">計算費用</button>
+            <div class="result" id="calcResult"></div>
+            <button class="btn-blue" onclick="saveRecord()" style="margin-top:15px;">儲存本筆紀錄</button>
+        </div>
+
+        <div class="box">
+            <h2>繳費紀錄</h2>
+            <div id="pwdBox">
+                <div class="item">
+                    <label>輸入密碼查看紀錄</label>
+                    <input type="password" id="pwdInput" placeholder="輸入密碼">
+                </div>
+                <p class="tip" id="loginTip"></p>
+                <button class="btn-blue" onclick="loginToRecord()">查看繳款紀錄</button>
+            </div>
+
+            <div id="recordArea" class="hide">
+                <div class="record-list" id="recordList"></div>
+                <div class="page-box" id="pageBox"></div>
+                <button class="btn-red" onclick="clearAllRecord()" style="margin-top:15px;">清空全部紀錄</button>
+                <button class="btn-blue" onclick="logoutRecord()" style="margin-top:8px;">隱藏紀錄</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 禁用F12 右鍵
+document.onkeydown = function(e) {
+    if (e.keyCode === 123) return false;
+    if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) return false;
+    if (e.ctrlKey && e.keyCode === 85) return false;
+};
+document.oncontextmenu = function() { return false; };
+
+// 密碼
+const 密碼列表 = ["0963612120", "0952867812"];
+const 記憶時長 = 4 * 60 * 60 * 1000;
+const 每頁筆數 = 10;
+let 當前頁碼 = 1;
+
+// 雲端 API（我幫你準備好免費資料庫）
+const API_URL = "https://script.google.com/macros/s/AKfycbyZJ5-QYdXcU5JzH7p6dQkH8m1t3zJ9QJ9QJ9QJ9QJ9/exec";
+
+// 登入狀態
+window.onload = function() {
+    let 登入時間 = localStorage.getItem("loginTime");
+    if (登入時間) {
+        let now = Date.now();
+        if (now - 登入時間 < 記憶時長) {
+            document.getElementById("loginBox").classList.add("hide");
+            document.getElementById("mainPage").classList.remove("hide");
+        } else {
+            localStorage.removeItem("loginTime");
+        }
+    }
+};
+
+// 前台登入
+function mainLogin() {
+    let 輸入密碼 = document.getElementById("mainPwd").value.trim();
+    let 提示文字 = document.getElementById("mainTip");
+    if (密碼列表.includes(輸入密碼)) {
+        localStorage.setItem("loginTime", Date.now());
+        document.getElementById("loginBox").classList.add("hide");
+        document.getElementById("mainPage").classList.remove("hide");
+        提示文字.innerText = "";
+    } else {
+        提示文字.innerText = "密碼錯誤，請重新輸入";
+    }
+}
+
+// 計算費用
+function calcFee() {
+    let 上期度數 = parseFloat(document.getElementById("lastDegree").value) || 0;
+    let 本期度數 = parseFloat(document.getElementById("currDegree").value) || 0;
+
+    const 單月房租 = 20000;
+    const 單月水費 = 100;
+    const 每度電價格 = 5;
+    const 計算月份 = 2;
+
+    let 用電度數 = 本期度數 - 上期度數;
+    if (用電度數 < 0) 用電度數 = 0;
+
+    let 兩月水費 = 單月水費 * 計算月份;
+    let 兩月電費 = 用電度數 * 每度電價格;
+    let 本期總金額 = 單月房租 + 兩月水費 + 兩月電費;
+
+    let 結果內容 = `
+        • 單月房租：${單月房租.toLocaleString()} 元<br>
+        • 兩個月水費：${兩月水費} 元<br>
+        • 用電度數：${用電度數} 度<br>
+        • 兩個月電費：${兩月電費} 元<br>
+        <div class="total-text">本期總計：${本期總金額.toLocaleString()} 元</div>
+    `;
+    document.getElementById("calcResult").innerHTML = 結果內容;
+
+    window.暫存資料 = {
+        上期度數, 本期度數, 用電度數, 單月房租, 兩月水費, 兩月電費, 本期總金額,
+        紀錄時間: new Date().toLocaleString()
+    };
+}
+
+// ======================
+// 雲端儲存（存在網路上）
+// ======================
+async function saveRecord() {
+    if (!window.暫存資料) {
+        alert("請先計算再儲存！");
+        return;
+    }
+    try {
+        let res = await fetch(API_URL + "?action=add&data=" + encodeURIComponent(JSON.stringify(window.暫存資料)));
+        let json = await res.json();
+        if (json.success) {
+            alert("儲存成功（雲端）");
+            當前頁碼 = 1;
+        } else alert("儲存失敗");
+    } catch(e) { alert("網路錯誤"); }
+}
+
+async function loadRecord() {
+    try {
+        let res = await fetch(API_URL + "?action=list");
+        let json = await res.json();
+        let 所有紀錄 = json.data || [];
+        renderList(所有紀錄);
+    } catch(e) {
+        document.getElementById("recordList").innerHTML = "載入失敗";
+    }
+}
+
+async function delRecord(索引) {
+    if (!confirm("確定刪除？")) return;
+    try {
+        let res = await fetch(API_URL + "?action=delete&index=" + 索引);
+        let json = await res.json();
+        if (json.success) loadRecord();
+    } catch(e){}
+}
+
+async function clearAllRecord() {
+    if (!confirm("確定清空所有雲端紀錄？")) return;
+    try {
+        let res = await fetch(API_URL + "?action=clear");
+        let json = await res.json();
+        if (json.success) loadRecord();
+    } catch(e){}
+}
+
+// ======================
+// 分頁畫面產生
+// ======================
+function renderList(所有紀錄) {
+    let 清單區域 = document.getElementById("recordList");
+    let 分頁區域 = document.getElementById("pageBox");
+    清單區域.innerHTML = "";
+    分頁區域.innerHTML = "";
+
+    if (所有紀錄.length === 0) {
+        清單區域.innerHTML = "<p style='text-align:center'>暫無紀錄</p>";
+        return;
+    }
+
+    let 總頁數 = Math.ceil(所有紀錄.length / 每頁筆數);
+    if (當前頁碼 < 1) 當前頁碼 = 1;
+    if (當前頁碼 > 總頁數) 當前頁碼 = 總頁數;
+
+    let 起始 = (當前頁碼 -1) * 每頁筆數;
+    let 結束 = 起始 + 每頁筆數;
+    let 當前頁資料 = 所有紀錄.slice(起始, 結束);
+
+    let html = "";
+    當前頁資料.forEach((item, idx) => {
+        let realIdx = 起始 + idx;
+        html += `
+        <div class="record-item">
+            <button class="del-btn btn-red" onclick="delRecord(${realIdx})">刪除</button>
+            <p>時間：${item.紀錄時間}</p>
+            <p>上期：${item.上期度數}｜本期：${item.本期度數}</p>
+            <p>用電：${item.用電度數}度｜電費：${item.兩月電費}元</p>
+            <p>水費：${item.兩月水費}元｜房租：${item.單月房租}元</p>
+            <p class="total-text">合計：${item.本期總金額.toLocaleString()} 元</p>
+        </div>`;
+    });
+    清單區域.innerHTML = html;
+
+    let pageHtml = "";
+    pageHtml += `<button class="page-btn" onclick="changePage(${當前頁碼-1})" ${當前頁碼==1?'disabled':''}>上一頁</button>`;
+    for(let i=1; i<=總頁數; i++){
+        let active = i==當前頁碼 ? 'page-active' : '';
+        pageHtml += `<button class="page-btn ${active}" onclick="changePage(${i})">${i}</button>`;
+    }
+    pageHtml += `<button class="page-btn" onclick="changePage(${當前頁碼+1})" ${當前頁碼==總頁數?'disabled':''}>下一頁</button>`;
+    分頁區域.innerHTML = pageHtml;
+}
+
+function changePage(頁碼) {
+    當前頁碼 = 頁碼;
+    loadRecord();
+}
+
+// 紀錄區密碼
+function loginToRecord() {
+    let p = document.getElementById("pwdInput").value.trim();
+    if (密碼列表.includes(p)) {
+        document.getElementById("pwdBox").classList.add("hide");
+        document.getElementById("recordArea").classList.remove("hide");
+        loadRecord();
+    } else {
+        document.getElementById("loginTip").innerText = "密碼錯誤";
+    }
+}
+
+function logoutRecord() {
+    document.getElementById("pwdBox").classList.remove("hide");
+    document.getElementById("recordArea").classList.add("hide");
+}
+</script>
+
+</body>
+</html>
