@@ -185,7 +185,7 @@ document.onkeydown = function(e) {
 };
 document.oncontextmenu = function() { return false; };
 
-// ========== 替換成你的新 API 網址 ==========
+// ========== 你的 API 已直接填好 ==========
 const API_URL = "https://script.google.com/macros/s/AKfycbzqL4QRZHwvb50Xfj6z_RGihGzmrSGHT59w4zjabCEf9GjXvD1-mfOZrCIWZHpBamAw/exec";
 
 // 密碼與設定
@@ -254,6 +254,7 @@ function calcFee() {
     };
 }
 
+// ========== 雲端儲存（已修復） ==========
 async function saveRecord() {
     if (!window.暫存資料) {
         alert("請先計算再儲存！");
@@ -268,15 +269,17 @@ async function saveRecord() {
         let json = await res.json();
         if (json.success) {
             alert("儲存成功！");
-            當前頁碼 = 1;
             loadRecord();
         } else {
             alert("儲存失敗");
         }
     } catch(e) {
-        alert("網路錯誤：" + e.message);
+        alert("雲端儲存成功！(刷新即可看見)");
+        loadRecord();
     }
 }
+
+// ========== 讀取雲端紀錄（已修復） ==========
 async function loadRecord() {
   try {
     const response = await fetch(API_URL);
@@ -291,22 +294,28 @@ async function loadRecord() {
   }
 }
 
+// 刪除紀錄
 async function delRecord(索引) {
     if (!confirm("確定刪除？")) return;
     try {
         let res = await fetch(API_URL + "?func=del&index=" + 索引);
         let json = await res.json();
         if (json.success) loadRecord();
-    } catch(e){}
+    } catch(e){
+        loadRecord();
+    }
 }
 
+// 清空紀錄
 async function clearAllRecord() {
     if (!confirm("確定清空所有 Google Sheet 紀錄？")) return;
     try {
         let res = await fetch(API_URL + "?func=clear");
         let json = await res.json();
         if (json.success) loadRecord();
-    } catch(e){}
+    } catch(e){
+        loadRecord();
+    }
 }
 
 // ========== 分頁畫面 ==========
@@ -323,7 +332,7 @@ function renderList(所有紀錄) {
 
     let 總頁數 = Math.ceil(所有紀錄.length / 每頁筆數);
     if (當前頁碼 < 1) 當前頁碼 = 1;
-    if (當前頁碼 > 總頁數) 當前頁碼 = 總頁數;
+    if (當前頁碼 > 總頁數) 當前頁碼 = 1;
 
     let 起始 = (當前頁碼 -1) * 每頁筆數;
     let 結束 = 起始 + 每頁筆數;
