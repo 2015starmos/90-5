@@ -254,27 +254,29 @@ function calcFee() {
     };
 }
 
-// ========== Google Sheet 存取（修正版） ==========
 async function saveRecord() {
     if (!window.暫存資料) {
         alert("請先計算再儲存！");
         return;
     }
     try {
-        // 改用 no-cors 模式，避免跨域
         let res = await fetch(API_URL, {
             method: "POST",
-            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(window.暫存資料)
         });
-        alert("儲存成功！（請到試算表確認）");
-        當前頁碼 = 1;
+        let json = await res.json();
+        if (json.success) {
+            alert("儲存成功！");
+            當前頁碼 = 1;
+            loadRecord();
+        } else {
+            alert("儲存失敗");
+        }
     } catch(e) {
         alert("網路錯誤：" + e.message);
     }
 }
-
 async function loadRecord() {
   try {
     const response = await fetch(API_URL);
