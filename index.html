@@ -186,7 +186,26 @@ document.onkeydown = function(e) {
 document.oncontextmenu = function() { return false; };
 
 // ========== 已套用你的 API 網址 ==========
-const API_URL = "https://script.google.com/macros/s/AKfycbzP7Pbt2ijy8wrS9YtBgnreuJL7gaKfABCXluSi8cHYoLCBuctpnz_ipU5iWBzF9gkB/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyiDp997vc_zWqgOKdt8odez8-uNOD1NtAvvID9WwAaw2gBmaRBznzmUlwOvxYBvnbA/exec";
+
+// 儲存範例
+async function saveRecord(rec) {
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(rec)
+    });
+    const data = await res.json();
+    console.log("結果：", data);
+    alert(data.success ? "儲存成功" : "失敗：" + data.error);
+  } catch (err) {
+    console.error("fetch 錯誤：", err);
+    alert("網路錯誤：" + err.message);
+  }
+}
 
 // 密碼與設定
 const 密碼列表 = ["0963612120", "0952867812"];
