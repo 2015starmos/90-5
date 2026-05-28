@@ -185,7 +185,7 @@ document.onkeydown = function(e) {
 };
 document.oncontextmenu = function() { return false; };
 
-// ========== 你的 API 已直接填好 ==========
+// ========== API 網址（維持你原本的） ==========
 const API_URL = "https://script.google.com/macros/s/AKfycbzqL4QRZHwvb50Xfj6z_RGihGzmrSGHT59w4zjabCEf9GjXvD1-mfOZrCIWZHpBamAw/exec";
 
 // 密碼與設定
@@ -254,14 +254,13 @@ function calcFee() {
     };
 }
 
-// ========== 雲端儲存（已修復） ==========
+// ========== 儲存（已套 CORS 代理） ==========
 async function saveRecord() {
     if (!window.暫存資料) {
         alert("請先計算再儲存！");
         return;
     }
     try {
-        // 加上 CORS 代理網址
         const proxyUrl = "https://api.allorigins.win/raw?url=";
         const targetUrl = API_URL;
         const res = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
@@ -276,9 +275,9 @@ async function saveRecord() {
     }
 }
 
+// ========== 讀取（已套 CORS 代理） ==========
 async function loadRecord() {
   try {
-    // 加上 CORS 代理網址
     const proxyUrl = "https://api.allorigins.win/raw?url=";
     const targetUrl = API_URL;
     const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
@@ -292,28 +291,27 @@ async function loadRecord() {
     document.getElementById("recordList").innerText = "載入失敗：" + err.message;
   }
 }
-// 刪除紀錄
+
 async function delRecord(索引) {
     if (!confirm("確定刪除？")) return;
     try {
-        let res = await fetch(API_URL + "?func=del&index=" + 索引);
-        let json = await res.json();
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const targetUrl = API_URL + "?func=del&index=" + 索引;
+        const res = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+        const json = await res.json();
         if (json.success) loadRecord();
-    } catch(e){
-        loadRecord();
-    }
+    } catch(e){}
 }
 
-// 清空紀錄
 async function clearAllRecord() {
     if (!confirm("確定清空所有 Google Sheet 紀錄？")) return;
     try {
-        let res = await fetch(API_URL + "?func=clear");
-        let json = await res.json();
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const targetUrl = API_URL + "?func=clear";
+        const res = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+        const json = await res.json();
         if (json.success) loadRecord();
-    } catch(e){
-        loadRecord();
-    }
+    } catch(e){}
 }
 
 // ========== 分頁畫面 ==========
@@ -330,7 +328,7 @@ function renderList(所有紀錄) {
 
     let 總頁數 = Math.ceil(所有紀錄.length / 每頁筆數);
     if (當前頁碼 < 1) 當前頁碼 = 1;
-    if (當前頁碼 > 總頁數) 當前頁碼 = 1;
+    if (當前頁碼 > 總頁數) 當前頁碼 = 總頁數;
 
     let 起始 = (當前頁碼 -1) * 每頁筆數;
     let 結束 = 起始 + 每頁筆數;
