@@ -186,7 +186,7 @@ document.onkeydown = function(e) {
 document.oncontextmenu = function() { return false; };
 
 // ========== 替換成你的新 API 網址 ==========
-const API_URL = "https://script.google.com/macros/s/AKfycbxVm_iyAmEUm7cMuPVcSKnQCOYjMRpJlDslgTmESQ5g9-CpWQWReUuzAgl-nJaDC7Ls/execc";
+const API_URL = "https://script.google.com/macros/s/AKfycbyltsPNS8CL0Ecn1eWS9MSSU-zKQgiSDATldz6vjpg1r18RTBeunbCQ_Mx4QHXwL72M/exec";
 
 // 密碼與設定
 const 密碼列表 = ["0963612120", "0952867812"];
@@ -276,14 +276,17 @@ async function saveRecord() {
 }
 
 async function loadRecord() {
-    try {
-        let res = await fetch(API_URL);
-        let json = await res.json();
-        let 所有紀錄 = json.data || [];
-        renderList(所有紀錄.reverse());
-    } catch(e) {
-        document.getElementById("recordList").innerHTML = "載入失敗：" + e.message;
+  try {
+    const response = await fetch(API_URL);
+    const result = await response.json();
+    if (result.success) {
+      renderList(result.data.reverse());
+    } else {
+      document.getElementById("recordList").innerText = "載入失敗：" + result.error;
     }
+  } catch (err) {
+    document.getElementById("recordList").innerText = "載入失敗：" + err.message;
+  }
 }
 
 async function delRecord(索引) {
