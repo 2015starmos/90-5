@@ -261,22 +261,36 @@ async function saveRecord() {
         return;
     }
     try {
-        let res = await fetch(API_URL, {
+        // 加上 CORS 代理網址
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const targetUrl = API_URL;
+        const res = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(window.暫存資料)
         });
-        let json = await res.json();
-        if (json.success) {
-            alert("儲存成功！");
-            loadRecord();
-        } else {
-            alert("儲存失敗");
-        }
-    } catch(e) {
-        alert("雲端儲存成功！(刷新即可看見)");
+        alert("儲存成功！");
         loadRecord();
+    } catch(e) {
+        alert("儲存失敗：" + e.message);
     }
+}
+
+async function loadRecord() {
+  try {
+    // 加上 CORS 代理網址
+    const proxyUrl = "https://api.allorigins.win/raw?url=";
+    const targetUrl = API_URL;
+    const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+    const result = await response.json();
+    if (result.success) {
+      renderList(result.data.reverse());
+    } else {
+      document.getElementById("recordList").innerText = "載入失敗：" + result.error;
+    }
+  } catch (err) {
+    document.getElementById("recordList").innerText = "載入失敗：" + err.message;
+  }
 }
 
 // ========== 讀取雲端紀錄（已修復） ==========
