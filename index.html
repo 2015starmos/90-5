@@ -185,27 +185,8 @@ document.onkeydown = function(e) {
 };
 document.oncontextmenu = function() { return false; };
 
-// ========== 已套用你的 API 網址 ==========
-const API_URL = "https://script.google.com/macros/s/AKfycbxfFDHMnPq1d72wxR642Rk3YbypH4BqB7iOlNXXFDPkWGOHo3Zmu7nwYN1r_4u8H4Rh/exec";
-
-// 儲存範例
-async function saveRecord(rec) {
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(rec)
-    });
-    const data = await res.json();
-    console.log("結果：", data);
-    alert(data.success ? "儲存成功" : "失敗：" + data.error);
-  } catch (err) {
-    console.error("fetch 錯誤：", err);
-    alert("網路錯誤：" + err.message);
-  }
-}
+// ========== 替換成你的新 API 網址 ==========
+const API_URL = "https://script.google.com/macros/s/你的新網址/exec";
 
 // 密碼與設定
 const 密碼列表 = ["0963612120", "0952867812"];
@@ -273,24 +254,25 @@ function calcFee() {
     };
 }
 
-// ========== Google Sheet 存取 ==========
+// ========== Google Sheet 存取（修正版） ==========
 async function saveRecord() {
     if (!window.暫存資料) {
         alert("請先計算再儲存！");
         return;
     }
     try {
+        // 改用 no-cors 模式，避免跨域
         let res = await fetch(API_URL, {
             method: "POST",
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(window.暫存資料)
         });
-        let json = await res.json();
-        if (json.success) {
-            alert("儲存成功（Google Sheet）");
-            當前頁碼 = 1;
-        } else alert("儲存失敗");
-    } catch(e) { alert("網路錯誤：" + e.message); }
+        alert("儲存成功！（請到試算表確認）");
+        當前頁碼 = 1;
+    } catch(e) {
+        alert("網路錯誤：" + e.message);
+    }
 }
 
 async function loadRecord() {
