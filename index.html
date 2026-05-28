@@ -292,22 +292,6 @@ async function loadRecord() {
     document.getElementById("recordList").innerText = "載入失敗：" + err.message;
   }
 }
-
-// ========== 讀取雲端紀錄（已修復） ==========
-async function loadRecord() {
-  try {
-    const response = await fetch(API_URL);
-    const result = await response.json();
-    if (result.success) {
-      renderList(result.data.reverse());
-    } else {
-      document.getElementById("recordList").innerText = "載入失敗：" + result.error;
-    }
-  } catch (err) {
-    document.getElementById("recordList").innerText = "載入失敗：" + err.message;
-  }
-}
-
 // 刪除紀錄
 async function delRecord(索引) {
     if (!confirm("確定刪除？")) return;
