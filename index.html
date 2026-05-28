@@ -185,14 +185,14 @@ document.onkeydown = function(e) {
 };
 document.oncontextmenu = function() { return false; };
 
-// 密碼
+// ========== 已套用你的 API 網址 ==========
+const API_URL = "https://script.google.com/macros/s/AKfycbxbj0cBhM90vXnlczC9wE9eAKapniaP3731LDHde8aZ0XSgPAb4KzFi2mdG6GOEDDtL/exec";
+
+// 密碼與設定
 const 密碼列表 = ["0963612120", "0952867812"];
 const 記憶時長 = 4 * 60 * 60 * 1000;
 const 每頁筆數 = 10;
 let 當前頁碼 = 1;
-
-// 雲端 API（我幫你準備好免費資料庫）
-const API_URL = "https://script.google.com/macros/s/AKfycbyZJ5-QYdXcU5JzH7p6dQkH8m1t3zJ9QJ9QJ9QJ9QJ9/exec";
 
 // 登入狀態
 window.onload = function() {
@@ -249,61 +249,61 @@ function calcFee() {
     document.getElementById("calcResult").innerHTML = 結果內容;
 
     window.暫存資料 = {
-        上期度數, 本期度數, 用電度數, 單月房租, 兩月水費, 兩月電費, 本期總金額,
-        紀錄時間: new Date().toLocaleString()
+        紀錄時間: new Date().toLocaleString(),
+        上期度數, 本期度數, 用電度數, 單月房租, 兩月水費, 兩月電費, 本期總金額
     };
 }
 
-// ======================
-// 雲端儲存（存在網路上）
-// ======================
+// ========== Google Sheet 存取 ==========
 async function saveRecord() {
     if (!window.暫存資料) {
         alert("請先計算再儲存！");
         return;
     }
     try {
-        let res = await fetch(API_URL + "?action=add&data=" + encodeURIComponent(JSON.stringify(window.暫存資料)));
+        let res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(window.暫存資料)
+        });
         let json = await res.json();
         if (json.success) {
-            alert("儲存成功（雲端）");
+            alert("儲存成功（Google Sheet）");
             當前頁碼 = 1;
         } else alert("儲存失敗");
-    } catch(e) { alert("網路錯誤"); }
+    } catch(e) { alert("網路錯誤：" + e.message); }
 }
 
 async function loadRecord() {
     try {
-        let res = await fetch(API_URL + "?action=list");
+        let res = await fetch(API_URL);
         let json = await res.json();
         let 所有紀錄 = json.data || [];
-        renderList(所有紀錄);
+        renderList(所有紀錄.reverse());
     } catch(e) {
-        document.getElementById("recordList").innerHTML = "載入失敗";
+        document.getElementById("recordList").innerHTML = "載入失敗：" + e.message;
     }
 }
 
 async function delRecord(索引) {
     if (!confirm("確定刪除？")) return;
     try {
-        let res = await fetch(API_URL + "?action=delete&index=" + 索引);
+        let res = await fetch(API_URL + "?func=del&index=" + 索引);
         let json = await res.json();
         if (json.success) loadRecord();
     } catch(e){}
 }
 
 async function clearAllRecord() {
-    if (!confirm("確定清空所有雲端紀錄？")) return;
+    if (!confirm("確定清空所有 Google Sheet 紀錄？")) return;
     try {
-        let res = await fetch(API_URL + "?action=clear");
+        let res = await fetch(API_URL + "?func=clear");
         let json = await res.json();
         if (json.success) loadRecord();
     } catch(e){}
 }
 
-// ======================
-// 分頁畫面產生
-// ======================
+// ========== 分頁畫面 ==========
 function renderList(所有紀錄) {
     let 清單區域 = document.getElementById("recordList");
     let 分頁區域 = document.getElementById("pageBox");
